@@ -4,7 +4,8 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 include_once(realpath(__DIR__.'/variables.php'));
 
 global $wpdb;
-global $tableizer_db_element;
+global $tableizer_tab;
+global $tableizer_tab_row_option;
 
 // Save
 
@@ -13,32 +14,34 @@ print_r($_POST);
 echo '</pre>';
 
 if(isset($_POST['action']) && $_POST['action'] === 'add_row'){
+    $categories= isset($_POST['categories']) && is_array($_POST['categories']) ? $_POST['categories'] : array();
+    if(isset($_POST['new_category'])){
+        array_push($categories,$_POST['new_category']);
+    }
     foreach ($_POST['table'] as $row_number => $row) {
-        $init = $wpdb->get_row("SELECT
-                max(element_id) + 1 as next_element_id,
-                (SELECT max(value) FROM {$tableizer_db_element} WHERE option_name = 'row') as next_row_number
-            FROM 
-                {$tableizer_db_element};
-        ");
-        $new_row_number = $init->next_row_number + $row_number;
+        $init = $wpdb->get_row("SELECT IFNULL(max(row_id),-1)+1 AS next_row_number FROM {$tableizer_tab}");
+        $next_row_number = $init->next_row_number;
         foreach ($_POST['table'][$row_number] as $col_number => $column) {
-            $elem_id = $init->next_element_id + $col_number;
             $column = esc_sql( $column );
-            $wpdb->query("INSERT INTO {$tableizer_db_element}
-                    (
-                        element_id,
-                        option_name,
-                        value
-                    )
-                VALUES
-                    (   {$elem_id},'value','$column'  ),
-                    (   {$elem_id},'type', '{$_POST['types'][$row_number]}'),
-                    (   {$elem_id},'row_number',$new_row_number  )
-            ");
+            $wpdb->insert(
+                $tableizer_tab,
+                [
+                    'row_id' => $next_row_number,
+                    'value' =>  $column,
+                    'type'  =>  $_POST['types'][$row_number],
+                    'column' => $col_number,
+                ]
+            );
+        }
+        if(sizeof($categories)>0){
+            $wpdb->query("INSERT INTO {$tableizer_tab_row_option} (row_id, option_name, option_value) VALUES ('{$next_row_number}','category','".implode("'),('{$next_row_number}','category','",$categories)."')");
         }
     }
 }
 
+// Collect data
+
+$categories = $wpdb->get_col("SELECT DISTINCT `option_value` FROM {$tableizer_tab_row_option} WHERE `option_name` = 'category';");
 
 
 // View
@@ -68,10 +71,27 @@ if(isset($_POST['action']) && $_POST['action'] === 'add_row'){
         <?php } ?>
     </tr>
 </tbody></table>
-<input type="submit" class="button">
+<p>Category: <input type="text" name="new_category" placeholder="New category name"> <select name="categories" multiple><option></option><?php foreach($categories as $category){print("<option value=\"{$category}\">{$category}</option>");}?></select></p>
+<p><input type="submit" class="button"></p>
 </form>
 
+<section>
+<h2>Stored data</h2>
 <?php
+
+?>
+<table>
+<thead>
+    <th></th>
+</thead>
+<tbody>
+</tbody>
+</table>
+</section>
+
+
+<?php
+
 // Elements
 
 ?>

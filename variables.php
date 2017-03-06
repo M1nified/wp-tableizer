@@ -2,5 +2,7 @@
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
 global $wpdb;
-global $tableizer_db_element;
-$tableizer_db_element = "{$wpdb->prefix}tableizer_element";
+global $tableizer_tab;
+global $tableizer_tab_row_option;
+$tableizer_tab = "{$wpdb->prefix}tableizer";
+$tableizer_tab_row_option = "{$wpdb->prefix}tableizer_row_option";

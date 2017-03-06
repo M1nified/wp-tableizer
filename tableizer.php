@@ -10,3 +10,5 @@
  include_once(realpath(__DIR__.'/variables.php'));
 
  include_once(realpath(__DIR__.'/setup.php'));
+
+ include_once(realpath(__DIR__.'/install.php'));
