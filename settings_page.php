@@ -14,7 +14,13 @@ global $tableizer_tab_row_option;
 // echo '</pre>';
 
 if(isset($_POST['action']) && $_POST['action'] === 'add_row'){
-    $categories= is_array($_POST['categories']) ? $_POST['categories'] : array($_POST['categories']);
+    if(array_key_exists('categories',$_POST)){
+        if(is_array($_POST['categories'])){
+            $categories = $_POST['categories'];
+        }else{
+            $categories = empty($_POST['categories']) ? array() : array($_POST['categories']);
+        }
+    }
     if(isset($_POST['new_category'])){
         array_push($categories,$_POST['new_category']);
     }
@@ -22,7 +28,7 @@ if(isset($_POST['action']) && $_POST['action'] === 'add_row'){
         $init = $wpdb->get_row("SELECT IFNULL(max(row_id),-1)+1 AS next_row_number FROM {$tableizer_tab}");
         $next_row_number = $init->next_row_number;
         foreach ($_POST['table'][$row_number] as $col_number => $column) {
-            $column = esc_sql( $column );
+            // $column = esc_sql( $column );
             $wpdb->insert(
                 $tableizer_tab,
                 [
@@ -37,6 +43,54 @@ if(isset($_POST['action']) && $_POST['action'] === 'add_row'){
             $wpdb->query("INSERT INTO {$tableizer_tab_row_option} (row_id, option_name, option_value) VALUES ('{$next_row_number}','category','".implode("'),('{$next_row_number}','category','",$categories)."')");
         }
     }
+}elseif(isset($_POST['action']) && $_POST['action'] === 'update'){
+    foreach ($_POST['values'] as $cell_id => $value) {
+        $wpdb->update(
+            $tableizer_tab,
+            [
+                'value' => $value,
+                'type' => $_POST['types'][$cell_id]
+            ],
+            [
+                'cel_id' => $cell_id
+            ]
+        );
+    }
+    foreach ($_POST['categories'] as $row_id => $categories) {
+        $wpdb->delete(
+            $tableizer_tab_row_option,
+            [
+                'row_id' => $row_id,
+                'option_name' => 'category'
+            ]
+        );
+        foreach ($categories as $category) {
+            $wpdb->insert(
+                $tableizer_tab_row_option,
+                [
+                    'row_id' => $row_id,
+                    'option_name' => 'category',
+                    'option_value' => $category
+                ]
+            );
+        }
+    }
+    if(array_key_exists('remove', $_POST) && is_array($_POST['remove']))
+        foreach ($_POST['remove'] as $row_id => $state){
+            if($state != 'on') continue;
+            $wpdb->delete(
+                $tableizer_tab_row_option,
+                [
+                    'row_id' => $row_id
+                ]
+            );
+            $wpdb->delete(
+                $tableizer_tab,
+                [
+                    'row_id' => $row_id
+                ]
+            );
+        }
 }
 
 // Collect data
@@ -77,26 +131,26 @@ $categories = $wpdb->get_col("SELECT DISTINCT `option_value` FROM {$tableizer_ta
 <table>
 <thead><tr><th>Type</th><th>Input</th><th>Output HTML</th></thead>
 <tbody>
-<tr>
-<td>text</td>
-<td><code>just plain text</code></td>
-<td><samp>just plain text</samp></td>
-</tr>
-<tr>
-<td>text</td>
-<td><code>&lt;button&gt;Click me&lt;/button&gt;</code></td>
-<td><samp>&lt;button&gt;Click me&lt;/button&gt;</samp></td>
-</tr>
-<tr>
-<td>image</td>
-<td><code>[Example image]http://example.com/example.png</code></td>
-<td><samp>&lt;img src="http://example.com/example.png" alt="Example image"&gt;</samp></td>
-</tr>
-<tr>
-<td>link</td>
-<td><code>[Read more]http://example.com/full_article</code></td>
-<td><samp>&lt;a href="http://example.com/full_article"&gt;Read more&lt;/a&gt;</samp></td>
-</tr>
+    <tr>
+    <td>text</td>
+    <td><code>just plain text</code></td>
+    <td><samp>just plain text</samp></td>
+    </tr>
+    <tr>
+    <td>text</td>
+    <td><code>&lt;button&gt;Click me&lt;/button&gt;</code></td>
+    <td><samp>&lt;button&gt;Click me&lt;/button&gt;</samp></td>
+    </tr>
+    <tr>
+    <td>image</td>
+    <td><code>[Example image]http://example.com/example.png</code></td>
+    <td><samp>&lt;img src="http://example.com/example.png" alt="Example image"&gt;</samp></td>
+    </tr>
+    <tr>
+    <td>link</td>
+    <td><code>[Read more]http://example.com/full_article</code></td>
+    <td><samp>&lt;a href="http://example.com/full_article"&gt;Read more&lt;/a&gt;</samp></td>
+    </tr>
 </tbody>
 </table>
 </section>
@@ -126,23 +180,30 @@ $categories = $wpdb->get_col("SELECT DISTINCT `option_value` FROM {$tableizer_ta
         <?php } ?>
     </tr>
 </tbody></table>
-<p>Category: <input type="text" name="new_category" placeholder="New category name"> <select name="categories" multiple><option></option><?php foreach($categories as $category){print("<option value=\"{$category}\">{$category}</option>");}?></select></p>
+<p><b>Select category:</b></p>
+<p><input type="text" name="new_category" placeholder="New category name"></p>
+<p><select name="categories" multiple><option></option><?php foreach($categories as $category){print("<option value=\"{$category}\">{$category}</option>");}?></select></p>
 <p><input type="submit" class="button"></p>
 </form>
 </section>
 
 <section>
-<h2>Stored data</h2>
-<?php
+<h2>Manage data</h2>
 
-?>
-<table>
-<thead>
-    <th></th>
-</thead>
-<tbody>
-</tbody>
-</table>
+<form method="get" action="<?php echo add_query_arg([]); ?>"><input type="hidden" name="page" value="tableizer_settings"><input type="hidden" name="editor_state" value="on"><p><b>Filter by category:</b> <select name="filter_by_category"><option value="">Show all</option><?php foreach($categories as $category){print("<option value=\"{$category}\"".(array_key_exists('filter_by_category',$_GET)&&$_GET['filter_by_category']==$category?' selected':'').">{$category}</option>");}?></select> <input type="submit" value="Filter" class="button"></p></form>
+
+<?php if( array_key_exists('editor_state', $_GET) && $_GET['editor_state'] == 'on' ) : ?>
+
+<p><a href="<?php echo add_query_arg(['editor_state'=>'off']) ?>" class="button">Disable edition</a></p>
+
+<form action="<?php echo add_query_arg([]); ?>" method="post">
+<input type="hidden" name="action" value="update">
+<?php print(make_table_editor(array_key_exists('filter_by_category', $_GET) && !empty($_GET['filter_by_category']) ? $_GET['filter_by_category'] : null)); ?>
+<p><input type="submit" class="button" value="Update"></p>
+</form>
+
+<?php endif; ?>
+
 </section>
 
 
@@ -170,3 +231,21 @@ $categories = $wpdb->get_col("SELECT DISTINCT `option_value` FROM {$tableizer_ta
 </table>
 </div>
 <script><?php include(__DIR__.'/js/settings_page.js'); ?></script>
+
+<?php
+
+// Styles
+
+?>
+
+<style>
+    .tableizer-table-editor{
+        border-spacing: 0;
+    }
+    .tableizer-table-editor tr:not(:first-child) td{
+        border-top: solid 2px;
+    }
+    .tableizer-table-editor input[type="text"]{
+        width: 100%;
+    }
+</style>
