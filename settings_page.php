@@ -9,9 +9,9 @@ global $tableizer_tab_row_option;
 
 // Save
 
-echo '<pre>';
-print_r($_POST);
-echo '</pre>';
+// echo '<pre>';
+// print_r($_POST);
+// echo '</pre>';
 
 if(isset($_POST['action']) && $_POST['action'] === 'add_row'){
     $categories= is_array($_POST['categories']) ? $_POST['categories'] : array($_POST['categories']);
@@ -51,22 +51,56 @@ $categories = $wpdb->get_col("SELECT DISTINCT `option_value` FROM {$tableizer_ta
 <h1>Tableizer</h1>
 <section>
 <h2>Usage</h2>
-<h3>Examples</h3>
-<pre>[tableizer category="category name"]</pre>
-<pre>[tableizer category="category name" top="10"]</pre>
-<pre>[tableizer category="category name" per_page="20"]</pre>
-<pre>[tableizer category="category name" link_target="_blank"]</pre>
+<p><code>[tableizer category="category name"]</code></p>
 <h3>Attributes</h3>
-<ul>
-    <li>category</li>
-    <li>link_target</li>
-    <li>per_page</li>
-    <li>top</li>
-</ul>
+<table>
+<thead><tr><th>Attribute</th><th>Description</th></thead>
+<tbody>
+    <tr><td><code>category</code></td><td>category to display</td></tr>
+    <tr><td><code>link_target</code></td><td>target for all displayed link cells</td></tr>
+    <tr><td><code>per_page</code></td><td>number of rows displayed per page</td></tr>
+    <tr><td><code>top</code></td><td>number of the first N rows to display</td></tr>
+</tbody>
+</table>
+<h3>Examples</h3>
+<p><code>[tableizer category="category name"]</code></p>
+<p><code>[tableizer category="category name" top="10"]</code></p>
+<p><code>[tableizer category="category name" per_page="20"]</code></p>
+<p><code>[tableizer category="category name" link_target="_blank"]</code></p>
 </section>
 
 <section>
 <h2>Add content</h2>
+
+<section>
+<h3>Cell content examples</h3>
+<table>
+<thead><tr><th>Type</th><th>Input</th><th>Output HTML</th></thead>
+<tbody>
+<tr>
+<td>text</td>
+<td><code>just plain text</code></td>
+<td><samp>just plain text</samp></td>
+</tr>
+<tr>
+<td>text</td>
+<td><code>&lt;button&gt;Click me&lt;/button&gt;</code></td>
+<td><samp>&lt;button&gt;Click me&lt;/button&gt;</samp></td>
+</tr>
+<tr>
+<td>image</td>
+<td><code>[Example image]http://example.com/example.png</code></td>
+<td><samp>&lt;img src="http://example.com/example.png" alt="Example image"&gt;</samp></td>
+</tr>
+<tr>
+<td>link</td>
+<td><code>[Read more]http://example.com/full_article</code></td>
+<td><samp>&lt;a href="http://example.com/full_article"&gt;Read more&lt;/a&gt;</samp></td>
+</tr>
+</tbody>
+</table>
+</section>
+<h3>Add cells</h3>
 <form method="get" action="#">
 <input type="hidden" name="page" value="<?php echo $_GET['page']; ?>">
 <p>
