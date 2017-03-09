@@ -14,3 +14,5 @@ function add_menu_settings(){
     );
 }
 add_action('admin_menu',__NAMESPACE__.'\add_menu_settings');
+
+add_shortcode( 'tableizer', __NAMESPACE__.'\shortcode_tableizer' );

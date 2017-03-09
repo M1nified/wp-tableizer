@@ -9,6 +9,10 @@
 
  include_once(realpath(__DIR__.'/variables.php'));
 
+ include_once(realpath(__DIR__.'/functions.php'));
+
+ include_once(realpath(__DIR__.'/shortcode.php'));
+
  include_once(realpath(__DIR__.'/setup.php'));
 
  include_once(realpath(__DIR__.'/install.php'));

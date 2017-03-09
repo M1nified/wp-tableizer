@@ -14,7 +14,7 @@ print_r($_POST);
 echo '</pre>';
 
 if(isset($_POST['action']) && $_POST['action'] === 'add_row'){
-    $categories= isset($_POST['categories']) && is_array($_POST['categories']) ? $_POST['categories'] : array();
+    $categories= is_array($_POST['categories']) ? $_POST['categories'] : array($_POST['categories']);
     if(isset($_POST['new_category'])){
         array_push($categories,$_POST['new_category']);
     }
@@ -28,7 +28,7 @@ if(isset($_POST['action']) && $_POST['action'] === 'add_row'){
                 [
                     'row_id' => $next_row_number,
                     'value' =>  $column,
-                    'type'  =>  $_POST['types'][$row_number],
+                    'type'  =>  $_POST['types'][$col_number],
                     'column' => $col_number,
                 ]
             );
@@ -47,6 +47,26 @@ $categories = $wpdb->get_col("SELECT DISTINCT `option_value` FROM {$tableizer_ta
 // View
 
 ?>
+
+<h1>Tableizer</h1>
+<section>
+<h2>Usage</h2>
+<h3>Examples</h3>
+<pre>[tableizer category="category name"]</pre>
+<pre>[tableizer category="category name" top="10"]</pre>
+<pre>[tableizer category="category name" per_page="20"]</pre>
+<pre>[tableizer category="category name" link_target="_blank"]</pre>
+<h3>Attributes</h3>
+<ul>
+    <li>category</li>
+    <li>link_target</li>
+    <li>per_page</li>
+    <li>top</li>
+</ul>
+</section>
+
+<section>
+<h2>Add content</h2>
 <form method="get" action="#">
 <input type="hidden" name="page" value="<?php echo $_GET['page']; ?>">
 <p>
@@ -67,6 +87,7 @@ $categories = $wpdb->get_col("SELECT DISTINCT `option_value` FROM {$tableizer_ta
         <td><select name="types[<?php echo $i; ?>]" style="width:100%;">
             <option value="text" selected>text</option>
             <option value="image">image</option>
+            <option value="link">link</option>
         </select></td>
         <?php } ?>
     </tr>
@@ -74,6 +95,7 @@ $categories = $wpdb->get_col("SELECT DISTINCT `option_value` FROM {$tableizer_ta
 <p>Category: <input type="text" name="new_category" placeholder="New category name"> <select name="categories" multiple><option></option><?php foreach($categories as $category){print("<option value=\"{$category}\">{$category}</option>");}?></select></p>
 <p><input type="submit" class="button"></p>
 </form>
+</section>
 
 <section>
 <h2>Stored data</h2>
