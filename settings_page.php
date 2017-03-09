@@ -20,6 +20,8 @@ if(isset($_POST['action']) && $_POST['action'] === 'add_row'){
         }else{
             $categories = empty($_POST['categories']) ? array() : array($_POST['categories']);
         }
+    }else{
+        $categories = array();
     }
     if(isset($_POST['new_category'])){
         array_push($categories,$_POST['new_category']);
@@ -40,7 +42,11 @@ if(isset($_POST['action']) && $_POST['action'] === 'add_row'){
             );
         }
         if(sizeof($categories)>0){
-            $wpdb->query("INSERT INTO {$tableizer_tab_row_option} (row_id, option_name, option_value) VALUES ('{$next_row_number}','category','".implode("'),('{$next_row_number}','category','",$categories)."')");
+            $wpdb->query("INSERT INTO {$tableizer_tab_row_option} (row_id, option_name, option_value)
+            VALUES
+                ".(array_key_exists('is_header',$_POST) && $_POST['is_header'] == 'on' ? "('{$next_row_number}','header',1)," : '')."
+                ('{$next_row_number}','category','".implode("'),('{$next_row_number}','category','",$categories)."')
+            ");
         }
     }
 }elseif(isset($_POST['action']) && $_POST['action'] === 'update'){
@@ -112,6 +118,7 @@ $categories = $wpdb->get_col("SELECT DISTINCT `option_value` FROM {$tableizer_ta
 <tbody>
     <tr><td><code>category</code></td><td>category to display</td></tr>
     <tr><td><code>link_target</code></td><td>target for all displayed link cells</td></tr>
+    <tr><td><code>only_rows</code></td><td>outputs only content of tbody</td></tr>
     <tr><td><code>per_page</code></td><td>number of rows displayed per page</td></tr>
     <tr><td><code>top</code></td><td>number of the first N rows to display</td></tr>
 </tbody>
@@ -120,6 +127,7 @@ $categories = $wpdb->get_col("SELECT DISTINCT `option_value` FROM {$tableizer_ta
 <p><code>[tableizer category="category name"]</code></p>
 <p><code>[tableizer category="category name" top="10"]</code></p>
 <p><code>[tableizer category="category name" per_page="20"]</code></p>
+<p><code>[tableizer category="category name" only_rows="on"]</code></p>
 <p><code>[tableizer category="category name" link_target="_blank"]</code></p>
 </section>
 
@@ -154,7 +162,7 @@ $categories = $wpdb->get_col("SELECT DISTINCT `option_value` FROM {$tableizer_ta
 </tbody>
 </table>
 </section>
-<h3>Add cells</h3>
+<h3>Add rows</h3>
 <form method="get" action="#">
 <input type="hidden" name="page" value="<?php echo $_GET['page']; ?>">
 <p>
@@ -183,6 +191,7 @@ $categories = $wpdb->get_col("SELECT DISTINCT `option_value` FROM {$tableizer_ta
 <p><b>Select category:</b></p>
 <p><input type="text" name="new_category" placeholder="New category name"></p>
 <p><select name="categories" multiple><option></option><?php foreach($categories as $category){print("<option value=\"{$category}\">{$category}</option>");}?></select></p>
+<p><b>Add as a header:</b> <input type="checkbox" name="is_header"></p>
 <p><input type="submit" class="button"></p>
 </form>
 </section>

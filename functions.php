@@ -4,22 +4,48 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 function make_table($options){
   global $wpdb, $tableizer_tab, $tableizer_tab_row_option;
 
+  $only_rows = array_key_exists('only_rows', $options) && $options['only_rows'] != 'false' && $options['only_rows'] != 'off' ? true : false;
   $category = esc_sql($options['category']);
 
   $table_class = array_key_exists ('class',$options) ? " class=\"{$options['class']}\"" : '';
   $table_class = array_key_exists ('table_class',$options) ? " class=\"{$options['table_class']}\"" : $table_class;
 
   $cells = $wpdb->get_results(
-      "SELECT DISTINCTROW
+      "SELECT DISTINCT
           t.*
       FROM {$tableizer_tab} as t
-      LEFT JOIN {$tableizer_tab_row_option} as tro ON t.row_id = tro.row_id
-      WHERE option_value = '{$category}'
+      LEFT JOIN {$tableizer_tab_row_option} as tro_cat ON t.row_id = tro_cat.row_id AND tro_cat.option_name = 'category'
+      LEFT JOIN {$tableizer_tab_row_option} as tro_ish ON t.row_id = tro_ish.row_id AND tro_ish.option_name = 'header'
+      WHERE
+        tro_cat.option_value = '{$category}'
+        AND
+        ( tro_ish.option_value = 0 OR tro_ish.option_value IS NULL )
       ORDER BY row_id, `column`;
   ");
 
-  $content = "<table{$table_class}><thead><tr>";
-  $content .= "</tr></thead><tbody><tr>";
+  $header = $wpdb->get_results(
+      "SELECT DISTINCT
+          t.*
+      FROM {$tableizer_tab} as t
+      LEFT JOIN {$tableizer_tab_row_option} as tro_cat ON t.row_id = tro_cat.row_id AND tro_cat.option_name = 'category'
+      LEFT JOIN {$tableizer_tab_row_option} as tro_ish ON t.row_id = tro_ish.row_id AND tro_ish.option_name = 'header'
+      WHERE
+        tro_cat.option_value = '{$category}'
+        AND
+        tro_ish.option_value = 1
+      ORDER BY row_id, `column`;
+  ");
+
+  $content = null;
+  if(!$only_rows){
+    $content .= "<table{$table_class}><thead><tr>";
+    foreach($header as $cell){
+      $cell_content = $cell->value;
+      $content .= "<th>{$cell_content}</th>";
+    }
+    $content .= "</tr></thead><tbody>";
+  }
+  $content .= "<tr>";
   $row_id = null;
   foreach($cells as $cell){
     if($row_id != $cell->row_id){
@@ -29,8 +55,11 @@ function make_table($options){
     $cell_content = make_cell_content($cell, $options);
     $content .= "<td>{$cell_content}</td>";
   }
-  $content .= "</tr></tbody></table>";
-  // $content = "<pre>".print_r($options,true)."</pre>"."<pre>".print_r($cells,true)."</pre>".$content;
+  $content .= "</tr>";
+  if(!$only_rows){
+    $content .= "</tbody></table>";
+  }
+  $content = "<pre>".print_r($options,true)."</pre>"."<pre>".print_r($cells,true)."</pre>".$content;
   return $content;
 }
 
@@ -60,8 +89,9 @@ function make_table_editor($filter_category = null){
   $row_cat = $wpdb->get_results(
     "SELECT
       row_id,
-        GROUP_CONCAT(option_value SEPARATOR ',') as categories
+      GROUP_CONCAT(option_value SEPARATOR ',') as categories
     FROM wordpress.wp_tableizer_row_option
+    WHERE option_name = 'category'
     GROUP BY row_id
     ORDER BY row_id
     ",
