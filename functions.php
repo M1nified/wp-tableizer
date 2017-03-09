@@ -59,7 +59,7 @@ function make_table($options){
   if(!$only_rows){
     $content .= "</tbody></table>";
   }
-  $content = "<pre>".print_r($options,true)."</pre>"."<pre>".print_r($cells,true)."</pre>".$content;
+  // $content = "<pre>".print_r($options,true)."</pre>"."<pre>".print_r($cells,true)."</pre>".$content;
   return $content;
 }
 
