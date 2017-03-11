@@ -9,6 +9,7 @@ function install(){
     global $tableizer_tab_row_option;
     $wpdb->query(
         "CREATE TABLE `{$tableizer_tab}` (
+            `cel_id` int(11) NOT NULL AUTO_INCREMENT,
             `row_id` int(11) NOT NULL,
             `value` text COLLATE utf8_bin,
             `type` varchar(255) COLLATE utf8_bin DEFAULT NULL,
