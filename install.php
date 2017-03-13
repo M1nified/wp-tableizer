@@ -14,7 +14,7 @@ function install(){
             `value` text COLLATE utf8_bin,
             `type` varchar(255) COLLATE utf8_bin DEFAULT NULL,
             `column` int(11) DEFAULT NULL,
-            PRIMARY KEY (`row_id`),
+            PRIMARY KEY (`cel_id`),
             UNIQUE KEY `id_UNIQUE` (`row_id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
     ");
