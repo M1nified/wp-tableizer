@@ -90,7 +90,7 @@ function make_table_editor($filter_category = null){
     "SELECT
       row_id,
       GROUP_CONCAT(option_value SEPARATOR ',') as categories
-    FROM wordpress.wp_tableizer_row_option
+    FROM $tableizer_tab_row_option
     WHERE option_name = 'category'
     GROUP BY row_id
     ORDER BY row_id
