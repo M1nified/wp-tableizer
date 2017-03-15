@@ -23,7 +23,7 @@ if(isset($_POST['action']) && $_POST['action'] === 'add_row'){
     }else{
         $categories = array();
     }
-    if(isset($_POST['new_category'])){
+    if(array_key_exists('new_category',$_POST) && $_POST['new_category'] != ''){
         array_push($categories,$_POST['new_category']);
     }
     foreach ($_POST['table'] as $row_number => $row) {
@@ -48,6 +48,14 @@ if(isset($_POST['action']) && $_POST['action'] === 'add_row'){
                 ('{$next_row_number}','category','".implode("'),('{$next_row_number}','category','",$categories)."')
             ");
         }
+        $wpdb->insert(
+            $tableizer_tab_row_option,
+            [
+                'row_id' => $next_row_number,
+                'option_name' => 'create_date',
+                'option_value' => current_time( 'mysql', 0 )
+            ]
+        );
     }
 }elseif(isset($_POST['action']) && $_POST['action'] === 'update'){
     foreach ($_POST['values'] as $cell_id => $value) {

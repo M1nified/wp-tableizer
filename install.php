@@ -15,7 +15,7 @@ function install(){
             `type` varchar(255) COLLATE utf8_bin DEFAULT NULL,
             `column` int(11) DEFAULT NULL,
             PRIMARY KEY (`cel_id`),
-            UNIQUE KEY `id_UNIQUE` (`row_id`)
+            UNIQUE KEY `id_UNIQUE` (`cel_id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
     ");
     $wpdb->query(
