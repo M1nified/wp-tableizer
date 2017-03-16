@@ -209,7 +209,20 @@ $categories = $wpdb->get_col("SELECT DISTINCT `option_value` FROM {$tableizer_ta
 <section>
 <h2>Manage data</h2>
 
-<form method="get" action="<?php echo add_query_arg([]); ?>"><input type="hidden" name="page" value="tableizer_settings"><input type="hidden" name="editor_state" value="on"><p><b>Filter by category:</b> <select name="filter_by_category"><option value="">Show all</option><?php foreach($categories as $category){print("<option value=\"{$category}\"".(array_key_exists('filter_by_category',$_GET)&&$_GET['filter_by_category']==$category?' selected':'').">{$category}</option>");}?></select> <input type="submit" value="Filter" class="button"></p></form>
+<form method="get" action="<?php echo add_query_arg([]); ?>"><input type="hidden" name="page" value="tableizer_settings"><input type="hidden" name="editor_state" value="on"><p><b>Filter by category:</b>
+<select name="filter_by_category"><option value="">Show all</option><?php foreach($categories as $category){print("<option value=\"{$category}\"".(array_key_exists('filter_by_category',$_GET)&&$_GET['filter_by_category']==$category?' selected':'').">{$category}</option>");}?></select>
+<?php
+$row_limit = array_key_exists('row_limit', $_GET) ? $_GET['row_limit'] : 20;
+$row_offset = array_key_exists('row_offset', $_GET) ? $_GET['row_offset'] : 0;
+$row_offset = array_key_exists('navigate', $_GET) ? ( $_GET['navigate'] == 'Previous' ? $row_offset - $row_limit : $row_offset + $row_limit ) : $row_offset;
+$row_offset = max( [ $row_offset, 0 ] );
+?>
+<input type="number" name="row_limit" value="<?php echo $row_limit; ?>">
+<input type="number" name="row_offset" value="<?php echo $row_offset; ?>">
+<input type="submit" value="Filter" class="button">
+<input type="submit" name="navigate" value="Previous" class="button">
+<input type="submit" name="navigate" value="Next" class="button">
+</p></form>
 
 <?php if( array_key_exists('editor_state', $_GET) && $_GET['editor_state'] == 'on' ) : ?>
 
@@ -217,7 +230,7 @@ $categories = $wpdb->get_col("SELECT DISTINCT `option_value` FROM {$tableizer_ta
 
 <form action="<?php echo add_query_arg([]); ?>" method="post">
 <input type="hidden" name="action" value="update">
-<?php print(make_table_editor(array_key_exists('filter_by_category', $_GET) && !empty($_GET['filter_by_category']) ? $_GET['filter_by_category'] : null)); ?>
+<?php print(make_table_editor(array_key_exists('filter_by_category', $_GET) && !empty($_GET['filter_by_category']) ? $_GET['filter_by_category'] : null, $row_limit, $row_offset)); ?>
 <p><input type="submit" class="button" value="Update"></p>
 </form>
 
