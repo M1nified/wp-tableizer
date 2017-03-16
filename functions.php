@@ -6,6 +6,15 @@ function make_table($options){
 
   $only_rows = array_key_exists('only_rows', $options) && $options['only_rows'] != 'false' && $options['only_rows'] != 'off' ? true : false;
   $category = esc_sql($options['category']);
+  $cat_exclude = array_key_exists('category-exclude', $options)
+    ? implode( // returns "'cat1','cat2'"
+      ',',
+      array_map( // returns ["'cat1'","'cat2'"]
+        function($cat){return '\''.esc_sql(trim($cat)).'\'';},
+        explode(',', $options['category-exclude'])
+      )
+    ) : '\'\'';
+  
 
   $table_class = array_key_exists ('class',$options) ? " class=\"{$options['class']}\"" : '';
   $table_class = array_key_exists ('table_class',$options) ? " class=\"{$options['table_class']}\"" : $table_class;
@@ -13,13 +22,25 @@ function make_table($options){
   $cells = $wpdb->get_results(
       "SELECT DISTINCT
           t.*
-      FROM {$tableizer_tab} as t
-      LEFT JOIN {$tableizer_tab_row_option} as tro_cat ON t.row_id = tro_cat.row_id AND tro_cat.option_name = 'category'
-      LEFT JOIN {$tableizer_tab_row_option} as tro_ish ON t.row_id = tro_ish.row_id AND tro_ish.option_name = 'header'
+      FROM {$tableizer_tab} AS t
+      LEFT JOIN {$tableizer_tab_row_option} AS tro_cat ON t.row_id = tro_cat.row_id AND tro_cat.option_name = 'category'
+      LEFT JOIN {$tableizer_tab_row_option} AS tro_ish ON t.row_id = tro_ish.row_id AND tro_ish.option_name = 'header'
       WHERE
         tro_cat.option_value = '{$category}'
         AND
         ( tro_ish.option_value = 0 OR tro_ish.option_value IS NULL )
+        AND
+        t.row_id not in (
+          SELECT DISTINCT
+            t_2.row_id
+          FROM {$tableizer_tab} AS t_2
+          LEFT JOIN {$tableizer_tab_row_option} AS tro_cat_2 ON t_2.row_id = tro_cat_2.row_id AND tro_cat_2.option_name = 'category'
+          LEFT JOIN {$tableizer_tab_row_option} AS tro_ish_2 ON t_2.row_id = tro_ish_2.row_id AND tro_ish_2.option_name = 'header'
+          WHERE
+            ( tro_ish_2.option_value = 0 OR tro_ish_2.option_value IS NULL )
+            AND
+            tro_cat_2.option_value in ({$cat_exclude})
+        )
       ORDER BY row_id, `column`;
   ");
 

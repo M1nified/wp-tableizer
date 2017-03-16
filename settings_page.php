@@ -125,6 +125,7 @@ $categories = $wpdb->get_col("SELECT DISTINCT `option_value` FROM {$tableizer_ta
 <thead><tr><th>Attribute</th><th>Description</th></thead>
 <tbody>
     <tr><td><code>category</code></td><td>category to display</td></tr>
+    <tr><td><code>category-exclude</code></td><td>category to be excluded, comma separated</td></tr>
     <tr><td><code>link_target</code></td><td>target for all displayed link cells</td></tr>
     <tr><td><code>only_rows</code></td><td>outputs only content of tbody</td></tr>
     <tr><td><code>per_page</code></td><td>number of rows displayed per page</td></tr>
@@ -137,6 +138,7 @@ $categories = $wpdb->get_col("SELECT DISTINCT `option_value` FROM {$tableizer_ta
 <p><code>[tableizer category="category name" per_page="20"]</code></p>
 <p><code>[tableizer category="category name" only_rows="on"]</code></p>
 <p><code>[tableizer category="category name" link_target="_blank"]</code></p>
+<p><code>[tableizer category="category name" category-exclude="category1,category2"]</code></p>
 </section>
 
 <section>
