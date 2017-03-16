@@ -84,25 +84,50 @@ function make_table($options){
   return $content;
 }
 
-function make_table_editor($filter_category = null){
+function make_table_editor($filter_category = null, $row_limit = 20, $row_offset = 0){
   global $wpdb, $tableizer_tab, $tableizer_tab_row_option;
 
   if($filter_category === null ){
     $cells = $wpdb->get_results(
-        "SELECT DISTINCTROW
+        "SELECT DISTINCT
             t.*
         FROM {$tableizer_tab} as t
+        WHERE
+          t.row_id in (
+            SELECT * FROM (
+              SELECT DISTINCT
+                t_2.row_id
+              FROM
+                {$tableizer_tab} AS t_2
+              ORDER BY t_2.row_id
+              LIMIT $row_limit
+              OFFSET $row_offset
+            ) AS tmp
+          )
         ORDER BY row_id, `column`;
     ");
   }else{
     $cells = $wpdb->get_results(
-        "SELECT DISTINCTROW
+        "SELECT DISTINCT
             t.*
         FROM {$tableizer_tab} as t
         LEFT JOIN {$tableizer_tab_row_option} as tro ON t.row_id = tro.row_id
         WHERE 
           tro.option_value = '$filter_category'
-          AND tro.option_name = 'category'
+          AND
+          tro.option_name = 'category'
+          AND
+          t.row_id in (
+            SELECT * FROM (
+              SELECT DISTINCT
+                t_2.row_id
+              FROM
+                {$tableizer_tab} AS t_2
+              ORDER BY t_2.row_id
+              LIMIT $row_limit
+              OFFSET $row_offset
+            ) AS tmp
+          )
         ORDER BY row_id, `column`;
     ");
   }
