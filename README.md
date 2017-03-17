@@ -17,13 +17,14 @@ git clone https://github.com/M1nified/wp-tableizer.git tableizer
 
 ## Shortcode attributes
 
-| Attribute    | Description
-|:---          | :---
-|`category`    | category to display
-|`link_target` | target for all displayed link cells
-|`only_rows`   | outputs only content of tbody
-|`per_page`    | number of rows displayed per page
-|`top`         | number of the first N rows to display
+| Attribute         | Description
+|:---               | :---
+|`category`         | category to display
+|`category-exclude` | comma separated list of categories to be excluded
+|`link_target`      | target for all displayed link cells
+|`only_rows`        | outputs only content of tbody
+|`per_page`         | number of rows displayed per page
+|`top`              | number of the first N rows to display
 
 ## Shortcode examples
 
@@ -37,6 +38,8 @@ git clone https://github.com/M1nified/wp-tableizer.git tableizer
 [tableizer category="category name" only_rows="on"]
 
 [tableizer category="category name" link_target="_blank"]
+
+[tableizer category="category name" category-exclude="category1,category2"]
 ```
 
 # Adding content
