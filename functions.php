@@ -2,7 +2,7 @@
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
 function make_table($options){
-  global $wpdb, $tableizer_tab, $tableizer_tab_row_option;
+  global $wpdb, $tableizer_tab, $tableizer_tab_row_option, $tableizer_tab_order;
 
   $only_rows = array_key_exists('only_rows', $options) && $options['only_rows'] != 'false' && $options['only_rows'] != 'off' ? true : false;
   $category = esc_sql($options['category']);
@@ -23,6 +23,7 @@ function make_table($options){
       "SELECT DISTINCT
           t.*
       FROM {$tableizer_tab} AS t
+      LEFT JOIN {$tableizer_tab_order} AS t_order ON t.row_id = t_order.row_id AND t_order.category_name = '{$category}'
       LEFT JOIN {$tableizer_tab_row_option} AS tro_cat ON t.row_id = tro_cat.row_id AND tro_cat.option_name = 'category'
       LEFT JOIN {$tableizer_tab_row_option} AS tro_ish ON t.row_id = tro_ish.row_id AND tro_ish.option_name = 'header'
       WHERE
@@ -41,7 +42,7 @@ function make_table($options){
             AND
             tro_cat_2.option_value in ({$cat_exclude})
         )
-      ORDER BY row_id, `column`;
+      ORDER BY t_order.order_value, row_id, `column`;
   ");
 
   $header = $wpdb->get_results(
@@ -185,6 +186,65 @@ function make_table_editor($filter_category = null, $row_limit = 20, $row_offset
   }
   $content .= "</tr></tbody></table>";
   // $content = "<pre>".print_r($options,true)."</pre>"."<pre>".print_r($cells,true)."</pre>".$content;
+  return $content;
+}
+
+function make_order_editor($filter_category = null){
+  global $wpdb, $tableizer_tab, $tableizer_tab_row_option, $tableizer_tab_order;
+  $content = null;
+
+  if($filter_category === null){
+    $cells = $wpdb->get_results(
+      "SELECT DISTINCT
+        t.row_id,
+        t.value,
+        t.type,
+        t.column
+      FROM $tableizer_tab AS t
+      LEFT JOIN $tableizer_tab_order AS t_order ON t.row_id = t_order.row_id
+      LEFT JOIN {$tableizer_tab_row_option} AS tro_cat ON t.row_id = tro_cat.row_id AND tro_cat.option_name = 'category'
+      LEFT JOIN {$tableizer_tab_row_option} AS tro_ish ON t.row_id = tro_ish.row_id AND tro_ish.option_name = 'header'
+      WHERE
+        ( tro_ish.option_value = 0 OR tro_ish.option_value IS NULL )
+      ORDER BY t_order.order_value, t.row_id, t.column 
+    ");
+  }else{
+    $cells = $wpdb->get_results(
+      "SELECT DISTINCT
+        t.row_id,
+        t.value,
+        t.type,
+        t.column
+      FROM $tableizer_tab AS t
+      LEFT JOIN $tableizer_tab_order AS t_order ON t.row_id = t_order.row_id AND t_order.category_name = '{$filter_category}'
+      LEFT JOIN {$tableizer_tab_row_option} AS tro_cat ON t.row_id = tro_cat.row_id AND tro_cat.option_name = 'category'
+      LEFT JOIN {$tableizer_tab_row_option} AS tro_ish ON t.row_id = tro_ish.row_id AND tro_ish.option_name = 'header'
+      WHERE
+        tro_cat.option_value = '{$filter_category}'
+        AND
+        ( tro_ish.option_value = 0 OR tro_ish.option_value IS NULL )
+      ORDER BY t_order.order_value, t.row_id, t.column
+    ");
+  }
+  $content .= "<table class=\"editor-order\"><thead><tr>";
+  // foreach($header as $cell){
+  //   $cell_content = $cell->value;
+  //   $content .= "<th>{$cell_content}</th>";
+  // }
+  $content .= "</tr></thead><tbody>";
+  $content .= "<tr>";
+  $row_id = null;
+  foreach($cells as $cell){
+    if($row_id != $cell->row_id){
+      $content .= "</tr><tr>";
+      $content .= "<td><input type=\"hidden\" name=\"order[]\" value=\"{$cell->row_id}\"></td>";
+      $row_id = $cell->row_id;
+    }
+    $cell_content = make_cell_content($cell, $options);
+    $content .= "<td>{$cell_content}</td>";
+  }
+  $content .= "</tr>";
+  $content .= "</tbody></table>";
   return $content;
 }
 

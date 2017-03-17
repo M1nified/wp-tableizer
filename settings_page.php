@@ -6,12 +6,11 @@ include_once(realpath(__DIR__.'/variables.php'));
 global $wpdb;
 global $tableizer_tab;
 global $tableizer_tab_row_option;
+global $tableizer_tab_order;
 
 // Save
 
-// echo '<pre>';
-// print_r($_POST);
-// echo '</pre>';
+// echo '<pre>';print_r($_POST);echo '</pre>';
 
 if(isset($_POST['action']) && $_POST['action'] === 'add_row'){
     if(array_key_exists('categories',$_POST)){
@@ -105,6 +104,24 @@ if(isset($_POST['action']) && $_POST['action'] === 'add_row'){
                 ]
             );
         }
+}elseif(isset($_POST['action']) && $_POST['action'] === 'sort'){
+    $category = array_key_exists('category', $_POST) && $_POST['category'] !== '' ? $_POST['category'] : null;
+    $wpdb->delete(
+        $tableizer_tab_order,
+        [
+            'category_name' => $category
+        ]
+    );
+    foreach($_POST['order'] as $index => $row_id){
+        $wpdb->insert(
+            $tableizer_tab_order,
+            [
+                'category_name' => $category,
+                'row_id' => $row_id,
+                'order_value' => $index
+            ]
+        );
+    }
 }
 
 // Collect data
@@ -224,7 +241,7 @@ $row_offset = max( [ $row_offset, 0 ] );
 <input type="submit" name="navigate" value="Next" class="button">
 </p></form>
 
-<?php if( array_key_exists('editor_state', $_GET) && $_GET['editor_state'] == 'on' ) : ?>
+<?php if( array_key_exists('editor_state', $_GET ) && $_GET['editor_state'] == 'on' ) : ?>
 
 <p><a href="<?php echo add_query_arg(['editor_state'=>'off']) ?>" class="button">Disable edition</a></p>
 
@@ -236,6 +253,43 @@ $row_offset = max( [ $row_offset, 0 ] );
 
 <?php endif; ?>
 
+</section>
+
+<section>
+<h2>Manage rows order</h2>
+<form method="get" action="<?php echo add_query_arg([]); ?>">
+<input type="hidden" name="page" value="tableizer_settings"><input type="hidden" name="editor_order" value="on">
+<p><b>Select category:</b>
+<select name="filter_by_category"><option value="">Global (no category)</option><?php foreach($categories as $category){print("<option value=\"{$category}\"".(array_key_exists('filter_by_category',$_GET)&&$_GET['filter_by_category']==$category?' selected':'').">{$category}</option>");}?></select>
+<input type="submit" value="Filter" class="button">
+</p>
+</form>
+
+<?php if( array_key_exists('editor_order', $_GET ) && $_GET['editor_order'] == 'on' ) : ?>
+
+<form action="<?php echo add_query_arg([]); ?>" method="post">
+<input type="hidden" name="action" value="sort">
+<input type="hidden" name="category" value="<?php echo array_key_exists('filter_by_category',$_GET) ? $_GET['filter_by_category'] : ''; ?>">
+<?php print(make_order_editor(array_key_exists('filter_by_category', $_GET) && !empty($_GET['filter_by_category']) ? $_GET['filter_by_category'] : null)); ?>
+<input type="submit" class="button">
+</form>
+
+<?php endif; ?>
+
+<style>
+    table.editor-order > tbody > tr {
+        cursor: move;
+        border: solid 1px #000;
+    }
+</style>
+<script>
+    (function(){
+        window.addEventListener('load',function(){
+            jQuery( "table.editor-order > tbody" ).sortable();
+            jQuery( "table.editor-order > tbody" ).disableSelection();
+        });
+    })();
+</script>
 </section>
 
 
@@ -262,6 +316,8 @@ $row_offset = max( [ $row_offset, 0 ] );
 </tbody>
 </table>
 </div>
+
+<script><?php include(__DIR__.'/lib/jquery-ui/jquery-ui.min.js'); ?></script>
 <script><?php include(__DIR__.'/js/settings_page.js'); ?></script>
 
 <?php

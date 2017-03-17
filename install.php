@@ -7,6 +7,7 @@ function install(){
     global $wpdb;
     global $tableizer_tab;
     global $tableizer_tab_row_option;
+    global $tableizer_tab_order;
     $wpdb->query(
         "CREATE TABLE `{$tableizer_tab}` (
             `cel_id` int(11) NOT NULL AUTO_INCREMENT,
@@ -28,4 +29,14 @@ function install(){
             UNIQUE KEY `option_id_UNIQUE` (`option_id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
     ");
+    $wpdb->query(
+        "CREATE TABLE `{$tableizer_tab_order}` (
+            `_id` INT NOT NULL AUTO_INCREMENT,
+            `row_id` INT(11) NOT NULL,
+            `category_name` VARCHAR(191) NULL,
+            `order_value` INT NULL,
+            PRIMARY KEY (`_id`)
+        );
+    ");
+
 }
