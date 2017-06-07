@@ -2,9 +2,18 @@
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
 function make_table($options){
-  global $wpdb, $tableizer_tab, $tableizer_tab_row_option, $tableizer_tab_order;
+  global $wpdb, $tableizer_tab, $tableizer_tab_row_option, $tableizer_tab_order, $view_row_limit;
 
   $only_rows = array_key_exists('only_rows', $options) && $options['only_rows'] != 'false' && $options['only_rows'] != 'off' ? true : false;
+
+  $row_offset = array_key_exists('tableizer_offset', $_GET) && is_numeric($_GET['tableizer_offset']) && $_GET['tableizer_offset'] > 0 ? intval($_GET['tableizer_offset']) : 0;
+  $nav_next = add_query_arg([
+    'tableizer_offset' => $row_offset + $view_row_limit
+  ]);
+  $nav_prev = add_query_arg([
+    'tableizer_offset' => $row_offset - $view_row_limit
+  ]);
+
   $category = esc_sql($options['category']);
   $cat_exclude = array_key_exists('category-exclude', $options)
     ? implode( // returns "'cat1','cat2'"
@@ -66,6 +75,7 @@ function make_table($options){
                             AND tro_cat_2.option_value IN (''))
             ORDER BY t_order.order_value , row_id , `column`) AS t1) AS t2) AS t3
         GROUP BY t3.row_id
+        LIMIT {$view_row_limit} OFFSET {$row_offset};
         ;
   ";
   // echo $query;
@@ -121,6 +131,15 @@ function make_table($options){
     $content .= "</tbody></table>";
   }
   // $content = "<pre>".print_r($options,true)."</pre>"."<pre>".print_r($cells,true)."</pre>".$content;
+
+  $content .= "<div style=\"clear: both;\"></div>";
+  $content .= "<p class=\"tabelizer-nav\" style=\"text-align: center;\">";
+  if( $row_offset > 0 )
+  {
+    $content .= "<a href=\"{$nav_prev}\">&lt;&lt;Poprzednia strona</a>&nbsp;";
+  }
+  $content .= "&nbsp;<a href=\"{$nav_next}\">Następna strona &gt;&gt;</a>";
+  $content .= "</p>";
   return $content;
 }
 
