@@ -19,31 +19,57 @@ function make_table($options){
   $table_class = array_key_exists ('class',$options) ? " class=\"{$options['class']}\"" : '';
   $table_class = array_key_exists ('table_class',$options) ? " class=\"{$options['table_class']}\"" : $table_class;
 
-  $cells = $wpdb->get_results(
-      "SELECT DISTINCT
-          t.*
-      FROM {$tableizer_tab} AS t
-      LEFT JOIN {$tableizer_tab_order} AS t_order ON t.row_id = t_order.row_id AND t_order.category_name = '{$category}'
-      LEFT JOIN {$tableizer_tab_row_option} AS tro_cat ON t.row_id = tro_cat.row_id AND tro_cat.option_name = 'category'
-      LEFT JOIN {$tableizer_tab_row_option} AS tro_ish ON t.row_id = tro_ish.row_id AND tro_ish.option_name = 'header'
-      WHERE
-        tro_cat.option_value = '{$category}'
-        AND
-        ( tro_ish.option_value = 0 OR tro_ish.option_value IS NULL )
-        AND
-        t.row_id not in (
-          SELECT DISTINCT
-            t_2.row_id
-          FROM {$tableizer_tab} AS t_2
-          LEFT JOIN {$tableizer_tab_row_option} AS tro_cat_2 ON t_2.row_id = tro_cat_2.row_id AND tro_cat_2.option_name = 'category'
-          LEFT JOIN {$tableizer_tab_row_option} AS tro_ish_2 ON t_2.row_id = tro_ish_2.row_id AND tro_ish_2.option_name = 'header'
-          WHERE
-            ( tro_ish_2.option_value = 0 OR tro_ish_2.option_value IS NULL )
-            AND
-            tro_cat_2.option_value in ({$cat_exclude})
-        )
-      ORDER BY t_order.order_value, row_id, `column`;
-  ");
+  $query = "SELECT MAX(tt.`column`) FROM {$tableizer_tab} as tt NATURAL JOIN {$tableizer_tab_row_option} as ttro WHERE ttro.option_value = '{$category}' AND ttro.option_name = 'category';";
+  $colls_max_index = $wpdb->get_var($query);
+  
+  $query = "SELECT t3.row_id";
+  for($i=0;$i<=$colls_max_index;$i++)
+  {
+    $query .= ", GROUP_CONCAT(col_{$i}) as col_{$i}";
+  }
+  $query .= " FROM ( SELECT t2.row_id";
+  for($i=0;$i<=$colls_max_index;$i++)
+  {
+    $query .= ", CASE WHEN t2.`column` = {$i} THEN t2.cell_json END AS col_{$i}";
+  }
+
+
+  $query .= " FROM
+                (SELECT 
+                t1.`row_id` AS row_id, CONCAT('{\"value\":\"', t1.value, '\", \"type\":\"', t1.type, '\"}') AS cell_json, t1.`column` AS `column`
+            FROM
+                (SELECT DISTINCT
+                t.*
+            FROM
+                wp_tableizer AS t
+            LEFT JOIN wp_tableizer_order AS t_order ON t.row_id = t_order.row_id
+                AND t_order.category_name = 'sukcesy uzytkownikow'
+            LEFT JOIN wp_tableizer_row_option AS tro_cat ON t.row_id = tro_cat.row_id
+                AND tro_cat.option_name = 'category'
+            LEFT JOIN wp_tableizer_row_option AS tro_ish ON t.row_id = tro_ish.row_id
+                AND tro_ish.option_name = 'header'
+            WHERE
+                tro_cat.option_value = 'sukcesy uzytkownikow'
+                    AND (tro_ish.option_value = 0
+                    OR tro_ish.option_value IS NULL)
+                    AND t.row_id NOT IN (SELECT DISTINCT
+                        t_2.row_id
+                    FROM
+                        wp_tableizer AS t_2
+                    LEFT JOIN wp_tableizer_row_option AS tro_cat_2 ON t_2.row_id = tro_cat_2.row_id
+                        AND tro_cat_2.option_name = 'category'
+                    LEFT JOIN wp_tableizer_row_option AS tro_ish_2 ON t_2.row_id = tro_ish_2.row_id
+                        AND tro_ish_2.option_name = 'header'
+                    WHERE
+                        (tro_ish_2.option_value = 0
+                            OR tro_ish_2.option_value IS NULL)
+                            AND tro_cat_2.option_value IN (''))
+            ORDER BY t_order.order_value , row_id , `column`) AS t1) AS t2) AS t3
+        GROUP BY t3.row_id
+        ;
+  ";
+  // echo $query;
+  $rows = $wpdb->get_results($query);
 
   $header = $wpdb->get_results(
       "SELECT DISTINCT
@@ -59,23 +85,36 @@ function make_table($options){
   ");
 
   $content = null;
+  $content .= "<table{$table_class}>";
   if(!$only_rows){
-    $content .= "<table{$table_class}><thead><tr>";
+    $content .= "<thead><tr>";
     foreach($header as $cell){
       $cell_content = $cell->value;
       $content .= "<th>{$cell_content}</th>";
     }
-    $content .= "</tr></thead><tbody>";
+    $content .= "</tr></thead>";
   }
+  $content .= "<tbody>";
   $content .= "<tr>";
   $row_id = null;
-  foreach($cells as $cell){
-    if($row_id != $cell->row_id){
-      $content .= "</tr><tr>";
-      $row_id = $cell->row_id;
+  foreach ($rows as $index => $row) 
+  {
+    for($i=0;$i<=$colls_max_index;$i++)
+    {
+      // print_r($row->{"col_".$i});
+      try
+      {
+        $cell = (object) json_decode( $row->{"col_".$i}, true );
+        // print_r($cell);
+        $cell_content = make_cell_content($cell);
+        $content .= "<td>{$cell_content}</td>";
+      }
+      catch(\Exception $ex)
+      {
+        $content .= "<td></td>";
+      }
     }
-    $cell_content = make_cell_content($cell, $options);
-    $content .= "<td>{$cell_content}</td>";
+    $content .= "</tr><tr>";
   }
   $content .= "</tr>";
   if(!$only_rows){
