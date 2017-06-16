@@ -3,7 +3,7 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
 
 function make_table($options){
-  // Ta funkcja juz nie dziala
+  // Ta funkcja juz nie dziala, przeniesione do Table.php
   static $table_number = 0;
   $table_number++;
 

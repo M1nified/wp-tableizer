@@ -26,6 +26,7 @@ class Table
     protected $sql_category_exclude = null;
 
     protected $coll_max_index;
+    protected $row_count_total;
 
     private $table_number = 0;
     private $offset_field_name = Table::OFFSET_FIELD_NAME;
@@ -37,8 +38,8 @@ class Table
         $this->table_number = Table::$table_count;
         $this->offset_field_name = Table::OFFSET_FIELD_NAME . "_{$this->table_number}";
 
-        $this->row_offset = array_key_exists($this->offset_field_name, $_GET) && is_numeric($_GET[$this->offset_field_name]) && $_GET[$this->offset_field_name] > 0 
-            ? intval($_GET[$this->offset_field_name]) 
+        $this->row_offset = array_key_exists($this->offset_field_name, $_GET) && is_numeric($_GET[$this->offset_field_name]) && $_GET[$this->offset_field_name] > 0
+            ? intval($_GET[$this->offset_field_name])
             : 0;
 
         $this->update_only_rows();
@@ -47,6 +48,7 @@ class Table
         $this->update_sql_category_exclude();
         $this->update_html_table_class();
         $this->update_coll_max_index();
+        $this->update_row_count_total();
         // echo "<pre>"; print_r($this); echo "</pre>";
     }
 
@@ -110,6 +112,13 @@ class Table
         $query = "SELECT MAX(tt.`column`) FROM {$tableizer_tab} as tt NATURAL JOIN {$tableizer_tab_row_option} as ttro WHERE ttro.option_value = '{$this->category}' AND ttro.option_name = 'category';";
         // echo "<pre>$query</pre>";
         $this->coll_max_index = $wpdb->get_var($query);
+    }
+    protected function update_row_count_total()
+    {
+        global $wpdb;
+        $query = $this->sql_build_query_row_count_total();
+        // echo "<pre>$query</pre>";
+        $this->row_count_total = $wpdb->get_var($query);
     }
 
     protected function sql_build_query_table()
@@ -175,6 +184,23 @@ class Table
             ORDER BY row_id, `column`;";
         return $query;
     }
+    protected function sql_build_query_row_count_total()
+    {
+        global $tableizer_tab, $tableizer_tab_row_option;
+        $query = "SELECT DISTINCT
+                COUNT(DISTINCT tab.row_id) AS row_count
+            FROM
+                {$tableizer_tab} AS tab
+            NATURAL JOIN
+                {$tableizer_tab_row_option} AS opt 
+            WHERE 
+                opt.option_name = 'category'
+                AND
+                opt.option_value = '{$this->category}'
+                AND
+                opt.option_value NOT IN ({$this->sql_category_exclude});";
+        return $query;
+    }
 
     protected function html_build_table($rows, $header)
     {
@@ -218,7 +244,9 @@ class Table
         if ($this->row_offset > 0) {
                 $content .= "<a href=\"{$this->nav_prev}\">&lt;&lt;Poprzednia strona</a>&nbsp;";
         }
-        $content .= "&nbsp;<a href=\"{$this->nav_next}\">Następna strona &gt;&gt;</a>";
+        if ($this->row_count_total >= $this->row_offset + $this->options['row-limit']) {
+            $content .= "&nbsp;<a href=\"{$this->nav_next}\">Następna strona &gt;&gt;</a>";
+        }
         $content .= "</p>";
         return $content;
     }
