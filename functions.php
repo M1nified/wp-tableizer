@@ -52,13 +52,13 @@ function make_table($options){
             FROM
                 wp_tableizer AS t
             LEFT JOIN wp_tableizer_order AS t_order ON t.row_id = t_order.row_id
-                AND t_order.category_name = 'sukcesy uzytkownikow'
+                AND t_order.category_name = '{$category}'
             LEFT JOIN wp_tableizer_row_option AS tro_cat ON t.row_id = tro_cat.row_id
                 AND tro_cat.option_name = 'category'
             LEFT JOIN wp_tableizer_row_option AS tro_ish ON t.row_id = tro_ish.row_id
                 AND tro_ish.option_name = 'header'
             WHERE
-                tro_cat.option_value = 'sukcesy uzytkownikow'
+                tro_cat.option_value = '{$category}'
                     AND (tro_ish.option_value = 0
                     OR tro_ish.option_value IS NULL)
                     AND t.row_id NOT IN (SELECT DISTINCT
@@ -72,7 +72,7 @@ function make_table($options){
                     WHERE
                         (tro_ish_2.option_value = 0
                             OR tro_ish_2.option_value IS NULL)
-                            AND tro_cat_2.option_value IN (''))
+                            AND tro_cat_2.option_value IN ({$cat_exclude}))
             ORDER BY t_order.order_value , row_id , `column`) AS t1) AS t2) AS t3
         GROUP BY t3.row_id
         LIMIT {$view_row_limit} OFFSET {$row_offset};
