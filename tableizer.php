@@ -11,6 +11,8 @@
 
  include_once(realpath(__DIR__.'/functions.php'));
 
+ include_once(realpath(__DIR__.'/Table.php'));
+
  include_once(realpath(__DIR__.'/shortcode.php'));
 
  include_once(realpath(__DIR__.'/setup.php'));

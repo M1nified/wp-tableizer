@@ -1,17 +1,24 @@
 <?php namespace wp_tableizer;
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
+
 function make_table($options){
+  // Ta funkcja juz nie dziala
+  static $table_number = 0;
+  $table_number++;
+
   global $wpdb, $tableizer_tab, $tableizer_tab_row_option, $tableizer_tab_order, $view_row_limit;
 
   $only_rows = array_key_exists('only_rows', $options) && $options['only_rows'] != 'false' && $options['only_rows'] != 'off' ? true : false;
 
-  $row_offset = array_key_exists('tableizer_offset', $_GET) && is_numeric($_GET['tableizer_offset']) && $_GET['tableizer_offset'] > 0 ? intval($_GET['tableizer_offset']) : 0;
+  $offset_field_name = "tableizer_offset_{$table_number}";
+
+  $row_offset = array_key_exists($offset_field_name, $_GET) && is_numeric($_GET[$offset_field_name]) && $_GET[$offset_field_name] > 0 ? intval($_GET[$offset_field_name]) : 0;
   $nav_next = add_query_arg([
-    'tableizer_offset' => $row_offset + $view_row_limit
+    $offset_field_name => $row_offset + $view_row_limit
   ]);
   $nav_prev = add_query_arg([
-    'tableizer_offset' => $row_offset - $view_row_limit
+    $offset_field_name => $row_offset - $view_row_limit
   ]);
 
   $category = esc_sql($options['category']);
