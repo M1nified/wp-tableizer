@@ -38,12 +38,12 @@ function make_table($options){
   $query = "SELECT MAX(tt.`column`) FROM {$tableizer_tab} as tt NATURAL JOIN {$tableizer_tab_row_option} as ttro WHERE ttro.option_value = '{$category}' AND ttro.option_name = 'category';";
   $colls_max_index = $wpdb->get_var($query);
   
-  $query = "SELECT t3.row_id";
+  $query = "SELECT t3.row_id, t3.order_value as `order_value`";
   for($i=0;$i<=$colls_max_index;$i++)
   {
     $query .= ", GROUP_CONCAT(col_{$i}) as col_{$i}";
   }
-  $query .= " FROM ( SELECT t2.row_id";
+  $query .= " FROM ( SELECT t2.row_id, t2.order_value as `order_value`";
   for($i=0;$i<=$colls_max_index;$i++)
   {
     $query .= ", CASE WHEN t2.`column` = {$i} THEN t2.cell_json END AS col_{$i}";
@@ -52,10 +52,12 @@ function make_table($options){
 
   $query .= " FROM
                 (SELECT 
-                t1.`row_id` AS row_id, CONCAT('{\"value\":\"', t1.value, '\", \"type\":\"', t1.type, '\"}') AS cell_json, t1.`column` AS `column`
+                t1.`row_id` AS row_id, CONCAT('{\"value\":\"', t1.value, '\", \"type\":\"', t1.type, '\"}') AS cell_json, t1.`column` AS `column`,
+                t1.order_value as `order_value`
             FROM
                 (SELECT DISTINCT
-                t.*
+                t.*,
+                t_order.order_value as `order_value`
             FROM
                 wp_tableizer AS t
             LEFT JOIN wp_tableizer_order AS t_order ON t.row_id = t_order.row_id
@@ -79,13 +81,12 @@ function make_table($options){
                     WHERE
                         (tro_ish_2.option_value = 0
                             OR tro_ish_2.option_value IS NULL)
-                            AND tro_cat_2.option_value IN ({$cat_exclude}))
-            ORDER BY t_order.order_value , row_id , `column`) AS t1) AS t2) AS t3
+                            AND tro_cat_2.option_value IN ({$cat_exclude}))) AS t1) AS t2) AS t3
         GROUP BY t3.row_id
-        LIMIT {$view_row_limit} OFFSET {$row_offset};
-        ;
-  ";
-  // echo $query;
+        ORDER BY t3.order_value , t3.row_id
+        LIMIT {$view_row_limit} OFFSET {$row_offset}
+        ;";
+  echo $query;
   $rows = $wpdb->get_results($query);
 
   $header = $wpdb->get_results(
