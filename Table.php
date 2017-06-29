@@ -124,21 +124,23 @@ class Table
     protected function sql_build_query_table()
     {
         global $tableizer_tab, $tableizer_tab_row_option, $tableizer_tab_order;
-        $query = "SELECT t3.row_id";
+        $query = "SELECT t3.row_id, t3.order_value as `order_value`";
         for ($i=0; $i<=$this->coll_max_index; $i++) {
                 $query .= ", GROUP_CONCAT(col_{$i}) as col_{$i}";
         }
-        $query .= " FROM ( SELECT t2.row_id";
+        $query .= " FROM ( SELECT t2.row_id, t2.order_value as `order_value`";
         for ($i=0; $i<=$this->coll_max_index; $i++) {
                 $query .= ", CASE WHEN t2.`column` = {$i} THEN t2.cell_json END AS col_{$i}";
         }
 
         $query .= " FROM
                 (SELECT 
-                t1.`row_id` AS row_id, CONCAT('{\"value\":\"', t1.value, '\", \"type\":\"', t1.type, '\"}') AS cell_json, t1.`column` AS `column`
+                t1.`row_id` AS row_id, CONCAT('{\"value\":\"', t1.value, '\", \"type\":\"', t1.type, '\"}') AS cell_json, t1.`column` AS `column`,
+                t1.order_value as `order_value`
             FROM
                 (SELECT DISTINCT
-                t.*
+                t.*,
+                t_order.order_value as `order_value`
             FROM
                 {$tableizer_tab} AS t
             LEFT JOIN {$tableizer_tab_order} AS t_order ON t.row_id = t_order.row_id
@@ -162,9 +164,9 @@ class Table
                     WHERE
                         (tro_ish_2.option_value = 0
                             OR tro_ish_2.option_value IS NULL)
-                            AND tro_cat_2.option_value IN ({$this->sql_category_exclude}))
-            ORDER BY t_order.order_value , row_id , `column`) AS t1) AS t2) AS t3
+                            AND tro_cat_2.option_value IN ({$this->sql_category_exclude}))) AS t1) AS t2) AS t3
         GROUP BY t3.row_id
+        ORDER BY t3.order_value , t3.row_id
         LIMIT {$this->options['row-limit']} OFFSET {$this->row_offset};
         ;";
         return $query;
