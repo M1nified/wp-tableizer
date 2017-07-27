@@ -1,4 +1,5 @@
 <?php namespace wp_tableizer;
+
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
 include_once(realpath(__DIR__.'/variables.php'));
@@ -12,18 +13,18 @@ global $tableizer_tab_order;
 
 // echo '<pre>';print_r($_POST);echo '</pre>';
 
-if(isset($_POST['action']) && $_POST['action'] === 'add_row'){
-    if(array_key_exists('categories',$_POST)){
-        if(is_array($_POST['categories'])){
+if (isset($_POST['action']) && $_POST['action'] === 'add_row') {
+    if (array_key_exists('categories', $_POST)) {
+        if (is_array($_POST['categories'])) {
             $categories = $_POST['categories'];
-        }else{
+        } else {
             $categories = empty($_POST['categories']) ? array() : array($_POST['categories']);
         }
-    }else{
+    } else {
         $categories = array();
     }
-    if(array_key_exists('new_category',$_POST) && $_POST['new_category'] != ''){
-        array_push($categories,$_POST['new_category']);
+    if (array_key_exists('new_category', $_POST) && $_POST['new_category'] != '') {
+        array_push($categories, $_POST['new_category']);
     }
     foreach ($_POST['table'] as $row_number => $row) {
         $init = $wpdb->get_row("SELECT IFNULL(max(row_id),-1)+1 AS next_row_number FROM {$tableizer_tab}");
@@ -40,11 +41,11 @@ if(isset($_POST['action']) && $_POST['action'] === 'add_row'){
                 ]
             );
         }
-        if(sizeof($categories)>0){
+        if (sizeof($categories)>0) {
             $wpdb->query("INSERT INTO {$tableizer_tab_row_option} (row_id, option_name, option_value)
             VALUES
-                ".(array_key_exists('is_header',$_POST) && $_POST['is_header'] == 'on' ? "('{$next_row_number}','header',1)," : '')."
-                ('{$next_row_number}','category','".implode("'),('{$next_row_number}','category','",$categories)."')
+                ".(array_key_exists('is_header', $_POST) && $_POST['is_header'] == 'on' ? "('{$next_row_number}','header',1)," : '')."
+                ('{$next_row_number}','category','".implode("'),('{$next_row_number}','category','", $categories)."')
             ");
         }
         $wpdb->insert(
@@ -56,7 +57,7 @@ if(isset($_POST['action']) && $_POST['action'] === 'add_row'){
             ]
         );
     }
-}elseif(isset($_POST['action']) && $_POST['action'] === 'update'){
+} elseif (isset($_POST['action']) && $_POST['action'] === 'update') {
     foreach ($_POST['values'] as $cell_id => $value) {
         $wpdb->update(
             $tableizer_tab,
@@ -88,23 +89,26 @@ if(isset($_POST['action']) && $_POST['action'] === 'add_row'){
             );
         }
     }
-    if(array_key_exists('remove', $_POST) && is_array($_POST['remove']))
-        foreach ($_POST['remove'] as $row_id => $state){
-            if($state != 'on') continue;
+    if (array_key_exists('remove', $_POST) && is_array($_POST['remove'])) {
+        foreach ($_POST['remove'] as $row_id => $state) {
+            if ($state != 'on') {
+                continue;
+            }
             $wpdb->delete(
-                $tableizer_tab_row_option,
-                [
-                    'row_id' => $row_id
-                ]
+            $tableizer_tab_row_option,
+            [
+            'row_id' => $row_id
+            ]
             );
             $wpdb->delete(
-                $tableizer_tab,
-                [
-                    'row_id' => $row_id
-                ]
+            $tableizer_tab,
+            [
+            'row_id' => $row_id
+            ]
             );
         }
-}elseif(isset($_POST['action']) && $_POST['action'] === 'sort'){
+    }
+} elseif (isset($_POST['action']) && $_POST['action'] === 'sort') {
     $category = array_key_exists('category', $_POST) && $_POST['category'] !== '' ? $_POST['category'] : null;
     $wpdb->delete(
         $tableizer_tab_order,
@@ -112,7 +116,7 @@ if(isset($_POST['action']) && $_POST['action'] === 'add_row'){
             'category_name' => $category
         ]
     );
-    foreach($_POST['order'] as $index => $row_id){
+    foreach ($_POST['order'] as $index => $row_id) {
         $wpdb->insert(
             $tableizer_tab_order,
             [
@@ -127,7 +131,6 @@ if(isset($_POST['action']) && $_POST['action'] === 'add_row'){
 // Collect data
 
 $categories = $wpdb->get_col("SELECT DISTINCT `option_value` FROM {$tableizer_tab_row_option} WHERE `option_name` = 'category';");
-
 
 // View
 
@@ -206,7 +209,7 @@ $categories = $wpdb->get_col("SELECT DISTINCT `option_value` FROM {$tableizer_ta
 <input type="hidden" name="action" value="add_row">
 <table id="table-input"><thead></thead><tbody>
     <tr>
-        <?php for($i=0;$i<(isset($_GET['cols_count']) && is_numeric($_GET['cols_count']) ? $_GET['cols_count'] : 1);$i++){ ?>
+        <?php for ($i=0; $i<(isset($_GET['cols_count']) && is_numeric($_GET['cols_count']) ? $_GET['cols_count'] : 1); $i++) { ?>
         <td><select name="types[<?php echo $i; ?>]" style="width:100%;">
             <option value="text" selected>text</option>
             <option value="image">image</option>
@@ -217,7 +220,9 @@ $categories = $wpdb->get_col("SELECT DISTINCT `option_value` FROM {$tableizer_ta
 </tbody></table>
 <p><b>Select category:</b></p>
 <p><input type="text" name="new_category" placeholder="New category name"></p>
-<p><select name="categories" multiple><option></option><?php foreach($categories as $category){print("<option value=\"{$category}\">{$category}</option>");}?></select></p>
+<p><select name="categories" multiple><option></option><?php foreach ($categories as $category) {
+    print("<option value=\"{$category}\">{$category}</option>");
+}?></select></p>
 <p><b>Add as a header:</b> <input type="checkbox" name="is_header"></p>
 <p><input type="submit" class="button"></p>
 </form>
@@ -227,7 +232,9 @@ $categories = $wpdb->get_col("SELECT DISTINCT `option_value` FROM {$tableizer_ta
 <h2>Manage data</h2>
 
 <form method="get" action="<?php echo add_query_arg([]); ?>"><input type="hidden" name="page" value="tableizer_settings"><input type="hidden" name="editor_state" value="on"><p><b>Filter by category:</b>
-<select name="filter_by_category"><option value="">Show all</option><?php foreach($categories as $category){print("<option value=\"{$category}\"".(array_key_exists('filter_by_category',$_GET)&&$_GET['filter_by_category']==$category?' selected':'').">{$category}</option>");}?></select>
+<select name="filter_by_category"><option value="">Show all</option><?php foreach ($categories as $category) {
+    print("<option value=\"{$category}\"".(array_key_exists('filter_by_category', $_GET)&&$_GET['filter_by_category']==$category?' selected':'').">{$category}</option>");
+}?></select>
 <?php
 $row_limit = array_key_exists('row_limit', $_GET) ? $_GET['row_limit'] : 20;
 $row_offset = array_key_exists('row_offset', $_GET) ? $_GET['row_offset'] : 0;
@@ -241,7 +248,7 @@ $row_offset = max( [ $row_offset, 0 ] );
 <input type="submit" name="navigate" value="Next" class="button">
 </p></form>
 
-<?php if( array_key_exists('editor_state', $_GET ) && $_GET['editor_state'] == 'on' ) : ?>
+<?php if (array_key_exists('editor_state', $_GET ) && $_GET['editor_state'] == 'on') : ?>
 
 <p><a href="<?php echo add_query_arg(['editor_state'=>'off']) ?>" class="button">Disable edition</a></p>
 
@@ -260,16 +267,18 @@ $row_offset = max( [ $row_offset, 0 ] );
 <form method="get" action="<?php echo add_query_arg([]); ?>">
 <input type="hidden" name="page" value="tableizer_settings"><input type="hidden" name="editor_order" value="on">
 <p><b>Select category:</b>
-<select name="filter_by_category"><option value="">Global (no category)</option><?php foreach($categories as $category){print("<option value=\"{$category}\"".(array_key_exists('filter_by_category',$_GET)&&$_GET['filter_by_category']==$category?' selected':'').">{$category}</option>");}?></select>
+<select name="filter_by_category"><option value="">Global (no category)</option><?php foreach ($categories as $category) {
+    print("<option value=\"{$category}\"".(array_key_exists('filter_by_category', $_GET)&&$_GET['filter_by_category']==$category?' selected':'').">{$category}</option>");
+}?></select>
 <input type="submit" value="Filter" class="button">
 </p>
 </form>
 
-<?php if( array_key_exists('editor_order', $_GET ) && $_GET['editor_order'] == 'on' ) : ?>
+<?php if (array_key_exists('editor_order', $_GET ) && $_GET['editor_order'] == 'on') : ?>
 
 <form action="<?php echo add_query_arg([]); ?>" method="post">
 <input type="hidden" name="action" value="sort">
-<input type="hidden" name="category" value="<?php echo array_key_exists('filter_by_category',$_GET) ? $_GET['filter_by_category'] : ''; ?>">
+<input type="hidden" name="category" value="<?php echo array_key_exists('filter_by_category', $_GET) ? $_GET['filter_by_category'] : ''; ?>">
 <?php print(make_order_editor(array_key_exists('filter_by_category', $_GET) && !empty($_GET['filter_by_category']) ? $_GET['filter_by_category'] : null)); ?>
 <input type="submit" class="button">
 </form>
@@ -282,14 +291,6 @@ $row_offset = max( [ $row_offset, 0 ] );
         border: solid 1px #000;
     }
 </style>
-<script>
-    (function(){
-        window.addEventListener('load',function(){
-            jQuery( "table.editor-order > tbody" ).sortable();
-            jQuery( "table.editor-order > tbody" ).disableSelection();
-        });
-    })();
-</script>
 </section>
 
 
@@ -302,14 +303,14 @@ $row_offset = max( [ $row_offset, 0 ] );
 <table id="new-rows">
 <thead>
     <tr>
-        <?php for($i=0;$i<(isset($_GET['cols_count']) && is_numeric($_GET['cols_count']) ? $_GET['cols_count'] : 1);$i++){ ?>
+        <?php for ($i=0; $i<(isset($_GET['cols_count']) && is_numeric($_GET['cols_count']) ? $_GET['cols_count'] : 1); $i++) { ?>
         <th>Col <?php echo $i; ?></th>
         <?php } ?>
     </tr>
 </thead>
 <tbody>
     <tr>
-        <?php for($i=0;$i<(isset($_GET['cols_count']) && is_numeric($_GET['cols_count']) ? $_GET['cols_count'] : 1);$i++){ ?>
+        <?php for ($i=0; $i<(isset($_GET['cols_count']) && is_numeric($_GET['cols_count']) ? $_GET['cols_count'] : 1); $i++) { ?>
         <td><input type="text" name="table[$row_number][<?php echo $i; ?>]"></td>
         <?php } ?>
     </tr>
@@ -317,8 +318,7 @@ $row_offset = max( [ $row_offset, 0 ] );
 </table>
 </div>
 
-<script><?php include(__DIR__.'/lib/jquery-ui/jquery-ui.min.js'); ?></script>
-<script><?php include(__DIR__.'/js/settings_page.js'); ?></script>
+
 
 <?php
 

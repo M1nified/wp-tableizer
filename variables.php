@@ -1,4 +1,5 @@
 <?php namespace wp_tableizer;
+
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
 global $wpdb;

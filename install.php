@@ -1,9 +1,11 @@
 <?php namespace wp_tableizer;
+
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
-register_activation_hook(__DIR__.'/tableizer.php',__NAMESPACE__.'\install');
+register_activation_hook(__DIR__.'/tableizer.php', __NAMESPACE__.'\install');
 
-function install(){
+function install()
+{
     global $wpdb;
     global $tableizer_tab;
     global $tableizer_tab_row_option;
@@ -38,5 +40,4 @@ function install(){
             PRIMARY KEY (`_id`)
         );
     ");
-
 }
